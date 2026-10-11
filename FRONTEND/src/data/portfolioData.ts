@@ -35,6 +35,11 @@ export interface Experience {
   description: string[];
   technologies: string[];
   keyResult: string;
+  employmentType: string;
+  startYear: number;
+  startMonth: number;
+  endYear?: number;
+  endMonth?: number;
 }
 
 export interface Project {
@@ -132,7 +137,12 @@ export const EXPERIENCES: Experience[] = [
     company: 'Adrta Technologies Pvt. Ltd.',
     location: 'Ahmedabad, India',
     role: 'Software Developer Intern',
+    employmentType: 'Internship',
     period: 'Feb 2026 – Jul 2026',
+    startYear: 2026,
+    startMonth: 2,
+    endYear: 2026,
+    endMonth: 7,
     description: [
       'Contributed to feature development across Admin, Store, and Customer portals, building REST APIs and CRUD workflows as part of 3+ production modules.',
       'Built production modules (Customer Support, Species Management, Task Management), handling backend design and database schema while collaborating with the team to align features with client requirements.',
@@ -148,7 +158,10 @@ export const EXPERIENCES: Experience[] = [
     company: 'Adrta Technologies Pvt. Ltd.',
     location: 'Ahmedabad, India',
     role: 'Junior Software Engineer',
-    period: 'Present',
+    employmentType: 'Full-time',
+    period: 'Aug - Present',
+    startYear: 2026,
+    startMonth: 8,
     description: [
       'Contributed to an in-house product across backend, frontend, and database layers, developing and maintaining features using Django REST Framework, TypeScript, and PostgreSQL, while resolving reported bugs across the application.',
       'Developed Python/Selenium web-scraping automation and browser-console scripts to automate repetitive data-entry workflows, reducing manual effort and improving operational efficiency.',

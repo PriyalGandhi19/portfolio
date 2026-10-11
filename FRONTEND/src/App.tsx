@@ -26,6 +26,43 @@ import type { Project, Experience, SkillCategory } from './data/portfolioData';
 
 const PROJECT_TINTS = ['bg-iris-soft', 'bg-peach', 'bg-mint-soft'];
 
+// ---- Experience helpers (LinkedIn-style: one company, several roles) ----
+// Newest role first.
+const ROLES: Experience[] = [...EXPERIENCES].sort(
+  (a, b) => b.startYear * 12 + b.startMonth - (a.startYear * 12 + a.startMonth)
+);
+
+const monthsBetween = (sy: number, sm: number, ey: number, em: number) => (ey - sy) * 12 + (em - sm) + 1;
+
+const formatDuration = (months: number) => {
+  const y = Math.floor(months / 12);
+  const m = months % 12;
+  const parts: string[] = [];
+  if (y) parts.push(`${y} yr${y > 1 ? 's' : ''}`);
+  if (m) parts.push(`${m} mo${m > 1 ? 's' : ''}`);
+  return parts.join(' ') || '1 mo';
+};
+
+const roleDuration = (e: Experience) => {
+  const now = new Date();
+  return formatDuration(
+    monthsBetween(e.startYear, e.startMonth, e.endYear ?? now.getFullYear(), e.endMonth ?? now.getMonth() + 1)
+  );
+};
+
+// Total time at the company: earliest start until today (or the latest end if no current role).
+const companyDuration = () => {
+  const now = new Date();
+  const first = ROLES[ROLES.length - 1];
+  const hasCurrent = ROLES.some((r) => r.endYear === undefined);
+  const lastEnd = ROLES.reduce(
+    (max, r) => (r.endYear !== undefined && r.endYear * 12 + (r.endMonth ?? 12) > max.y * 12 + max.m ? { y: r.endYear, m: r.endMonth ?? 12 } : max),
+    { y: first.startYear, m: first.startMonth }
+  );
+  const end = hasCurrent ? { y: now.getFullYear(), m: now.getMonth() + 1 } : lastEnd;
+  return formatDuration(monthsBetween(first.startYear, first.startMonth, end.y, end.m));
+};
+
 const architectureDetails: Record<string, { nodeLabel: string; title: string; desc: string; tech: string[] }> = {
   React: {
     nodeLabel: 'Frontend',
@@ -74,7 +111,7 @@ const FORMSPREE_URL = 'https://formspree.io/f/mljgnyeb';
 
 export const App: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [expandedExperience, setExpandedExperience] = useState<string | null>(EXPERIENCES?.[0]?.id || null);
+  const [expandedExperience, setExpandedExperience] = useState<string | null>(ROLES[0]?.id || null);
   const [activeArchNode, setActiveArchNode] = useState<string>('React');
   const [showTerminal, setShowTerminal] = useState<boolean>(false);
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '', website: '' });
@@ -290,50 +327,75 @@ export const App: React.FC = () => {
             {/* Experience */}
             <section id="experience">
               <SectionHeading title="Where I’ve worked" sub="Professional history at Adrta Technologies Pvt. Ltd." />
-              <div className="relative space-y-4 pl-6 sm:pl-8 border-l-2 border-line ml-1">
-                {EXPERIENCES.map((exp: Experience) => {
-                  const isExpanded = expandedExperience === exp.id;
-                  return (
-                    <div key={exp.id} className="relative rounded-3xl bg-white border border-line overflow-hidden">
-                      <span className="absolute -left-[2.15rem] sm:-left-[2.65rem] top-7 w-4 h-4 rounded-full bg-iris border-4 border-paper" aria-hidden="true" />
-                      <button
-                        onClick={() => setExpandedExperience(isExpanded ? null : exp.id)}
-                        aria-expanded={isExpanded}
-                        className="w-full p-6 text-left flex items-start justify-between gap-4 hover:bg-iris-soft/40 transition-colors"
-                      >
-                        <div>
-                          <div className="font-display text-xl font-bold">{exp.role}</div>
-                          <div className="text-sm text-muted mt-1">{exp.company}, {exp.location} · {exp.period}</div>
-                        </div>
-                        <ChevronDown className={`w-5 h-5 mt-1 text-iris shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                      </button>
 
-                      <AnimatePresence initial={false}>
-                        {isExpanded && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.25 }}
-                            className="overflow-hidden"
+              <div className="rounded-3xl bg-white border border-line p-5 sm:p-8">
+                {/* Company header (shown once, like LinkedIn) */}
+                <div className="flex items-start gap-4">
+                  <div
+                    className="w-12 h-12 rounded-xl bg-iris text-white font-display text-2xl font-bold flex items-center justify-center shrink-0"
+                    aria-hidden="true"
+                  >
+                    {ROLES[0].company.charAt(0).toLowerCase()}
+                  </div>
+                  <div>
+                    <h3 className="font-display text-xl font-bold leading-tight">{ROLES[0].company}</h3>
+                    <div className="text-sm text-ink/80 mt-1">{companyDuration()}</div>
+                    <div className="text-sm text-muted">{ROLES[0].location} · On-site</div>
+                  </div>
+                </div>
+
+                {/* Roles at this company, newest first */}
+                <ol className="mt-6 ml-5 border-l-2 border-line pl-6 space-y-3">
+                  {ROLES.map((exp: Experience) => {
+                    const isExpanded = expandedExperience === exp.id;
+                    return (
+                      <li key={exp.id} className="relative">
+                        <span
+                          className="absolute -left-[1.95rem] top-6 w-3 h-3 rounded-full bg-iris border-2 border-white"
+                          aria-hidden="true"
+                        />
+                        <div className="rounded-2xl border border-line overflow-hidden">
+                          <button
+                            onClick={() => setExpandedExperience(isExpanded ? null : exp.id)}
+                            aria-expanded={isExpanded}
+                            className="w-full p-5 text-left flex items-start justify-between gap-4 hover:bg-iris-soft/40 transition-colors"
                           >
-                            <div className="px-6 pb-6 space-y-5">
-                              <ul className="space-y-2.5 text-sm text-ink/80 leading-relaxed list-disc pl-5 marker:text-iris">
-                                {exp.description.map((desc, i) => <li key={i}>{desc}</li>)}
-                              </ul>
-                              <div className="p-4 rounded-2xl bg-mint-soft text-sm text-ink">
-                                <strong>Key result: </strong>{exp.keyResult}
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {exp.technologies.map((t) => <Chip key={t} tone="iris">{t}</Chip>)}
-                              </div>
+                            <div>
+                              <div className="font-display text-lg font-bold">{exp.role}</div>
+                              <div className="text-sm text-muted mt-0.5">{exp.employmentType}</div>
+                              <div className="text-sm text-muted">{exp.period} · {roleDuration(exp)}</div>
                             </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })}
+                            <ChevronDown className={`w-5 h-5 mt-1 text-iris shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+
+                          <AnimatePresence initial={false}>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="px-5 pb-5 space-y-5">
+                                  <ul className="space-y-2.5 text-sm text-ink/80 leading-relaxed list-disc pl-5 marker:text-iris">
+                                    {exp.description.map((desc, i) => <li key={i}>{desc}</li>)}
+                                  </ul>
+                                  <div className="p-4 rounded-2xl bg-mint-soft text-sm text-ink">
+                                    <strong>Key result: </strong>{exp.keyResult}
+                                  </div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {exp.technologies.map((t) => <Chip key={t} tone="iris">{t}</Chip>)}
+                                  </div>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
               </div>
             </section>
 
