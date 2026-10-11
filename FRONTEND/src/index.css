@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f7f5ff;
+  --color-ink: #1a1640;
+  --color-muted: #625f86;
+  --color-line: #e3deff;
+  --color-iris: #5b3fff;
+  --color-iris-deep: #4529e0;
+  --color-iris-soft: #ece8ff;
+  --color-coral: #ff7a6b;
+  --color-peach: #ffe6df;
+  --color-mint: #7cf5c2;
+  --color-mint-soft: #dcf7ea;
+  --color-term: #17143a;
+  --color-term-bar: #221e4d;
+
+  --font-display: "Bricolage Grotesque", "DM Sans", system-ui, sans-serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Quiet dot grid behind the hero: a nod to graph paper / code editors */
+.dot-grid {
+  background-image: radial-gradient(rgba(91, 63, 255, 0.16) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+}
+
+/* Visible keyboard focus everywhere */
+:focus-visible {
+  outline: 2px solid var(--color-iris);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* One pulse ring that draws the eye to the terminal launcher until it's been used */
+@keyframes ring {
+  0% { box-shadow: 0 0 0 0 rgba(255, 122, 107, 0.65); }
+  100% { box-shadow: 0 0 0 18px rgba(255, 122, 107, 0); }
+}
+.pulse-ring {
+  animation: ring 1.8s ease-out infinite;
+}
+
+@keyframes caret {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.caret {
+  display: inline-block;
+  width: 0.55em;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  background: var(--color-mint);
+  animation: caret 1s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
