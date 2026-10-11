@@ -70,6 +70,8 @@ const Chip: React.FC<{ children: React.ReactNode; tone?: 'iris' | 'plain' }> = (
   </span>
 );
 
+const FORMSPREE_URL = 'https://formspree.io/f/mljgnyeb';
+
 export const App: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [expandedExperience, setExpandedExperience] = useState<string | null>(EXPERIENCES?.[0]?.id || null);
@@ -102,8 +104,7 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Posts to the Django backend (apps/contact): 201 = email sent,
-  // 202 = saved but delivery not confirmed. Both are shown honestly.
+  // Sends the form to Formspree, which emails the message to the site owner.
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactForm.name || !contactForm.email || !contactForm.message) {
@@ -112,31 +113,41 @@ export const App: React.FC = () => {
       return;
     }
 
+    // Honeypot: real visitors never see this field. If it is filled it's a bot,
+    // so pretend success and send nothing.
+    if (contactForm.website) {
+      setContactStatus('sent');
+      return;
+    }
+
     setContactStatus('loading');
     setContactErrorDetail(null);
 
     try {
-      const res = await fetch('/api/contact/', {
+      const res = await fetch(FORMSPREE_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(contactForm),
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          name: contactForm.name,
+          email: contactForm.email,
+          message: contactForm.message,
+        }),
       });
-      const data = await res.json().catch(() => ({}));
 
-      if (res.status === 201) {
+      if (res.ok) {
         setContactStatus('sent');
         setContactForm({ name: '', email: '', message: '', website: '' });
-      } else if (res.status === 202) {
-        setContactStatus('saved_not_sent');
-        setContactErrorDetail(data.detail || 'Message saved, but email delivery is not confirmed.');
       } else {
+        const data = await res.json().catch(() => ({}));
         setContactStatus('error');
-        const firstError = data && typeof data === 'object' ? Object.values(data)[0] : null;
-        setContactErrorDetail(Array.isArray(firstError) ? String(firstError[0]) : 'Could not submit the form. Please try again or email directly.');
+        setContactErrorDetail(
+          data?.errors?.[0]?.message ||
+            `Could not send your message. Please email ${PERSONAL_INFO.email} directly.`
+        );
       }
     } catch {
       setContactStatus('error');
-      setContactErrorDetail(`Could not reach the server. Please email ${PERSONAL_INFO.email} directly.`);
+      setContactErrorDetail(`Could not send your message. Please email ${PERSONAL_INFO.email} directly.`);
     }
   };
 
