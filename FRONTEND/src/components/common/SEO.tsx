@@ -9,7 +9,7 @@ export interface SEOProps {
 }
 
 export const SEO: React.FC<SEOProps> = ({
-  title = 'Full Stack Engineer | Portfolio & Systems Architecture',
+  title = 'Priyal Gandhi | Portfolio ',
   description = 'Production-ready full stack engineer specializing in React, TypeScript, Python, Django REST, PostgreSQL, and Web Security.',
   keywords = ['Full Stack Engineer', 'React', 'TypeScript', 'Django', 'PostgreSQL', 'Web Security', 'Software Architecture'],
   ogImage = '/og-image.png',
